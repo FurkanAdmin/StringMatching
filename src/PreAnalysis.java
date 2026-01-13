@@ -39,28 +39,69 @@ public abstract class PreAnalysis {
  */
 class StudentPreAnalysis extends PreAnalysis {
     
-    @Override
-    public String chooseAlgorithm(String text, String pattern) {
-        // TODO: Students should implement their analysis logic here
-        // 
-        // Example considerations:
-        // - If pattern is very short, Naive might be fastest
-        // - If pattern has repeating prefixes, KMP is good
-        // - If pattern is long and text is very long, RabinKarp might be good
-        // - If alphabet is small, Boyer-Moore can be very efficient
-        //
-        // For now, this returns null which means "run all algorithms"
-        // Students should replace this with their logic
-        
-        return null; // Return null to run all algorithms, or return algorithm name to use pre-analysis
-    }
+    // Mikro metinler için sınır
+    private static final int MICRO_TEXT_LIMIT = 64;
+    
+    // Boyer-Moore algoritmasına geçemek için geçiş sınırı
+    private static final int BM_THRESHOLD = 256; 
     
     @Override
+    public String chooseAlgorithm(String text, String pattern) {
+        if (text == null || pattern == null) return "Naive";
+        
+        int n = text.length();
+        int m = pattern.length();
+
+        // Eğer metin çok kısaysa, analiz maliyetine bile değmez.
+
+        if (n < MICRO_TEXT_LIMIT) {
+            return "Naive";
+        }
+
+        // Hem "AAAA" hem "ABAB" gibi durumları yakalar.
+        if (m > 3 && isRepetitive(pattern)) {
+            return "KMP";
+        }
+
+        // 3. BOYER-MOORE vs NAIVE
+        // Pattern güvenliyse uzunluğa bak.
+
+        // girilen veri uzun ise BoyerMoore seçeceğiz eğer kısa ise Naive seçeceğiz!
+
+
+        if (m <= 2 || n < BM_THRESHOLD) {
+            return "Naive";
+        }
+
+        // Kalan her şey için en hızlısı
+        return "BoyerMoore";
+    }
+    
+    /**
+     * Pattern analizi: paternin içeriğini kontrol eder, paternde ne kadar tekrar eden parça var diye kontrol edeer.
+     * Algoritma seçimini buna göre yaptığımız zaman çok daha verimli sonuçlar aldık fakat pre analiz süresi çok az arttı.
+     */
+    private boolean isRepetitive(String pattern) {
+        int m = pattern.length();
+        int limit = Math.min(m, 12); // İlk 12 karakter
+        int repeatCount = 0;
+        
+        for (int i = 2; i < limit; i++) {
+            char current = pattern.charAt(i);
+            if (current == pattern.charAt(i-1) || current == pattern.charAt(i-2)) {
+                repeatCount++;
+            }
+        }
+        
+        // Eğer örüntünün yarısından fazlası tekrar ediyor ise KMP seç
+        return repeatCount > (limit / 2);
+    }
+
+    @Override
     public String getStrategyDescription() {
-        return "Default strategy - no pre-analysis implemented yet (students should implement this)";
+        return "Final Strateji: Mikro metinlerde direkt Naive. Tekrarlayan/Alternatif desenlerde KMP. Uzun metinlerde Boyer-Moore.";
     }
 }
-
 
 /**
  * Example implementation showing how pre-analysis could work

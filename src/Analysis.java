@@ -1,5 +1,8 @@
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 class Naive extends Solution {
     static {
@@ -117,7 +120,6 @@ class RabinKarp extends Solution {
 
     public RabinKarp() {
     }
-
     private static final int PRIME = 101; // A prime number for hashing
 
     @Override
@@ -190,6 +192,7 @@ class RabinKarp extends Solution {
  * TODO: Implement Boyer-Moore algorithm
  * This is a homework assignment for students
  */
+
 class BoyerMoore extends Solution {
     static {
         SUBCLASSES.add(BoyerMoore.class);
@@ -201,11 +204,85 @@ class BoyerMoore extends Solution {
 
     @Override
     public String Solve(String text, String pattern) {
-        // TODO: Students should implement Boyer-Moore algorithm here
-        throw new UnsupportedOperationException("Boyer-Moore algorithm not yet implemented - this is your homework!");
+        List<Integer> indices = new ArrayList<>();
+        int n = text.length();
+        int m = pattern.length();
+
+        if (m == 0) {
+            for (int i = 0; i <= n; i++) indices.add(i);
+            return indicesToString(indices);
+        }
+        if (m > n) return "";
+
+        //array yerine hashmap kullanmak hızı epey arttırıyor, unicode desteği de var!
+        Map<Character, Integer> badChar = new HashMap<>();
+        for (int i = 0; i < m; i++) {
+            badChar.put(pattern.charAt(i), i);
+        }
+
+        int[] goodSuffix = preprocessGoodSuffix(pattern);
+
+        int s = 0;
+        while (s <= (n - m)) {
+            int j = m - 1;
+
+            while (j >= 0 && pattern.charAt(j) == text.charAt(s + j)) {
+                j--;
+            }
+
+            if (j < 0) {
+                indices.add(s);
+                s += goodSuffix[0];
+            } else {
+                char badCharKey = text.charAt(s + j);
+                
+                // HashMapten değeri al, yoksa -1 varsay
+                int lastOccurrence = badChar.getOrDefault(badCharKey, -1);
+                
+                int bcShift = j - lastOccurrence;
+                int gsShift = goodSuffix[j + 1];
+
+                s += Math.max(bcShift, gsShift);
+            }
+        }
+
+        return indicesToString(indices);
+    }
+
+    private int[] preprocessGoodSuffix(String pattern) {
+        int m = pattern.length();
+        int[] shift = new int[m + 1];
+        int[] bpos = new int[m + 1];
+
+        int i = m;
+        int j = m + 1;
+        bpos[i] = j;
+
+        while (i > 0) {
+            while (j <= m && pattern.charAt(i - 1) != pattern.charAt(j - 1)) {
+                if (shift[j] == 0) {
+                    shift[j] = j - i;
+                }
+                j = bpos[j];
+            }
+            i--;
+            j--;
+            bpos[i] = j;
+        }
+
+        j = bpos[0];
+        for (i = 0; i <= m; i++) {
+            if (shift[i] == 0) {
+                shift[i] = j;
+            }
+            if (i == j) {
+                j = bpos[j];
+            }
+        }
+
+        return shift;
     }
 }
-
 /**
  * TODO: Implement your own creative string matching algorithm
  * This is a homework assignment for students
